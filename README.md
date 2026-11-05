@@ -2,13 +2,9 @@
 
 Real-time rainbow sheen (like soap bubbles, oil slicks and bismuth crystals) added to Unity's standard URP Lit shader.
 
-> **📝 NOTE:** Add a hero GIF here of the final material (e.g. a rotating sphere or bubble). Suggested path: `images/hero.gif`.
-
 - **Built with:** Unity 6.3 LTS (6000.3.19f1) and the Universal Render Pipeline (URP)
 - **Based on:** [Thin Film Interference for Computer Graphics](https://gamedev.net/tutorials/programming/graphics/thin-film-interference-for-computer-graphics-r2962) by Bacterius
 - **Try the math yourself:** [Desmos graph](https://www.desmos.com/calculator/5wcoebnlgz)
-
-> **📝 NOTE:** Your outline said "600.3.19f1". I assumed 6000.3.19f1 (Unity 6.3 LTS). Double-check.
 
 ## Contents
 
@@ -34,8 +30,6 @@ The project is split into modules. Each module folder has its own Unity scene wi
 
 To start, open the project in Unity 6000.3.19f1, open a module's scene, select an object and change the settings under **Thin Film Interference** in its material.
 
-> **📝 NOTE:** Folder names and module contents above are guesses. Replace with the real ones.
-
 ---
 
 ## What Is Thin-Film Interference?
@@ -51,8 +45,6 @@ You can see it in soap bubbles, oil or fuel on wet pavement, and bismuth crystal
   <br>
   <sub>Left to right: soap bubble by <a href="https://commons.wikimedia.org/wiki/File:Lipid_Islands_on_Soap_Bubble.jpg">KarlGaff</a>; diesel spill by <a href="https://commons.wikimedia.org/wiki/File:Dieselrainbow.jpg">John</a> (CC BY-SA 2.5); bismuth crystal by <a href="https://commons.wikimedia.org/wiki/File:Bismuth_crystal_macro.jpg">Dschwen</a> (CC BY 2.5). All via Wikimedia Commons.</sub>
 </p>
-
-> **📝 NOTE:** I couldn't confirm the soap bubble photo's license. Check the [file page](https://commons.wikimedia.org/wiki/File:Lipid_Islands_on_Soap_Bubble.jpg) and add it to the credit line.
 
 ### Project goal
 
@@ -116,8 +108,6 @@ float theta1 = asin((_N0 * sin(theta0)) / _N1);
 float theta2 = asin((_N0 * sin(theta0)) / _N2);
 ```
 
-> **📝 NOTE:** Possible image/GIF here: a ray bending as it enters the film.
-
 ### Step 2: Phase shift
 
 Light reflected off the bottom of the film travels a little farther than light reflected off the top, so it comes back slightly out of step. How far out of step depends on the wavelength, which is why different colors get amplified or suppressed. Here is the math that calculates this phase shift in our implementation:
@@ -178,8 +168,6 @@ return 1 - scaled;
 
 This runs once each for red, green and blue, giving the final RGB color.
 
-> **📝 NOTE:** `GetColor` has a `wavelength` parameter it never uses (the wavelength is already inside `phase`). Consider removing it before publishing the code.
-
 ### Try it in Desmos
 
 [This Desmos graph](https://www.desmos.com/calculator/5wcoebnlgz) runs the same math with no code. It shows how much light is reflected (0 to 1) across the whole color spectrum, and the RGB color you get from sampling it at three wavelengths. Move the sliders for thickness, IORs and angle to see how the colors change.
@@ -188,8 +176,6 @@ This runs once each for red, green and blue, giving the final RGB color.
   <img src="images/desmos-graph.png" alt="Desmos graph of reflected light across the color spectrum" width="560"><br>
   <sub><a href="https://www.desmos.com/calculator/5wcoebnlgz">Open the interactive graph</a></sub>
 </p>
-
-> **📝 NOTE:** Save your Desmos screenshot as `images/desmos-graph.png`, or update the path.
 
 ---
 
@@ -248,8 +234,6 @@ half3 filmColor = GetTFI(acos(VoH), uv);
 brdf += filmColor * DirectBRDFSpecular(brdfData, normalWS, lightDirectionWS, viewDirectionWS);
 ```
 
-> **📝 NOTE:** GIF here: sphere lit by one light, environment reflections off, rotating the light.
-
 ### Environment specular
 
 This is the specular for reflections of the surroundings (skybox and reflection probes). It's calculated in `EnvironmentBRDFSpecular` in `MyBRDF.hlsl`:
@@ -263,13 +247,9 @@ half3 filmColor = GetTFI(acos(NoV), uv);
 return half3(surfaceReduction, surfaceReduction, surfaceReduction) * filmColor;
 ```
 
-> **📝 NOTE:** GIF here: same sphere with only skybox/probe lighting, camera orbiting.
-
 ### Material settings
 
 `ThinFilmLitShaderGUI.cs` shows the thin-film settings at the top of the material, with all of Unity's normal Lit settings below.
-
-> **📝 NOTE:** Screenshot of the material inspector here.
 
 ### Full list of changed files
 
@@ -311,10 +291,6 @@ Besides swapping includes, the thin-film function needs the object's UV coordina
 - **Keep the outside IOR (`_N0`) the smallest.** Otherwise the math can break at steep angles.
 - **Film IOR between the other two.** When the film's IOR is between the outside and object IORs (like an anti-reflective coating), the phase-shift term Δ makes the result inaccurate. The default settings aren't affected.
 
-> **📝 NOTE:** About that last bullet: the Fresnel amplitudes already include the reflection flip, so adding Δ double-counts it when exactly one interface flips. Checked against the exact Airy formula: at 1.0 / 1.38 / 1.52 the shader gives 0.043 vs. the exact 0.013. Your defaults (1.0 / 1.7 / 1.3) and soap bubbles match exactly. You could either fix it in code (drop Δ) and remove this bullet, or keep it as a known limitation.
-
-> **📝 NOTE:** Not mentioned to readers: the thin-film properties sit outside `UnityPerMaterial`, so the material isn't SRP Batcher compatible. Fine for a teaching project; mention it if you want.
-
 ---
 
 ## Extra: Bubble Effect
@@ -331,8 +307,6 @@ return ValueNoise(uv) + heightMod;
 ```
 
 With Bubble Depth off, the thickness comes from the **Film Depth Map** texture instead, so you can paint any pattern you like.
-
-> **📝 NOTE:** GIF here: transparent bubble with Bubble Depth on. Also check in-scene which way the noise scrolls so the description matches.
 
 ---
 
