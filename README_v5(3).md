@@ -11,11 +11,6 @@
 3. [**Shader Integration**](#part-3-shader-integration): putting the math into Unity's URP Lit shader
 4. [**Beyond the Basics**](#part-4-beyond-the-basics): the bubble effect, limitations and references
 
-<br>
-
----
----
-
 # Part 1: Overview
 
 
