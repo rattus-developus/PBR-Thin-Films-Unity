@@ -18,7 +18,7 @@
 
 # Part 1: Overview
 
-*What thin-film interference is, what this project does, and how it's approached.*
+
 
 ## What is thin-film interference?
 
