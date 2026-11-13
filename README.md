@@ -18,7 +18,6 @@
 <br>
 
 ---
-
 # Overview
 
 ## What is thin-film interference?
@@ -60,7 +59,6 @@ The organization of this explanation mimics that of the included modules:
 <br>
 
 ---
-
 # Part 1: Deriving the Function
 
 > **Associated Module: 1 - Thin-Film Math**
@@ -176,7 +174,6 @@ The shader evaluates *I_R* at three wavelengths (one each for red, green and blu
 <br>
 
 ---
-
 # Part 2: Shader Integration
 
 > **Associated Module: 2 - Unity Integration**
@@ -290,7 +287,6 @@ With the Fresnel term inserted at those two locations, the shader is complete an
 <br>
 
 ---
-
 # Part 3: Extras & Closing Thoughts
 
 ## Extra effect: soap bubbles
