@@ -17,6 +17,8 @@
 
 <br>
 
+---
+
 # Overview
 
 ## What is thin-film interference?
@@ -54,6 +56,8 @@ The organization of this explanation mimics that of the included modules:
 1. **Approximate the thin-film math at a single point.** Write a mathematical function that approximates thin film interference at a single point on a surface given info about that surface (similar to how a fragment shader might).
 
 2. **Plug that function into a BRDF.** In a standard BRDF, the Fresnel term decides how much light is reflected at a given angle. Replacing it with a thin-film function renders the effect while leaving the rest of the lighting model unchanged.
+
+<br>
 
 ---
 
@@ -149,7 +153,7 @@ I_R = 1 - I_T
 F(\mathbf{v},\mathbf{h}) = I_R
 ```
 
-The *k*-th wave to pass through the film has amplitude $`\beta\alpha^k`$ and phase $`k\varphi`$. Adding every wave together forms a geometric series, and its squared magnitude simplifies to *I_T*, the fraction of light transmitted into the object. The model assumes no light is absorbed, so the rest is reflected: *I_R*, which becomes the new Fresnel term.
+The *k*-th wave to pass through the film has amplitude $`\beta\alpha^k`$ and phase $`k\varphi`$. Adding every wave together forms a geometric series, and its squared magnitude simplifies to *I_T*, the fraction of light transmitted into the object. The model assumes no light is absorbed, so the rest is reflected: *I_R*, which be used to replace the Fresnel term in a BRDF.
 
 The leading fraction is the **beam ratio**, an energy correction for light passing into the object (it changes speed and its beam changes width as it bends). It's only needed because the formula is written for transmitted light; for reflected light, it cancels out.
 
@@ -169,23 +173,21 @@ The shader evaluates *I_R* at three wavelengths (one each for red, green and blu
 - **Cone sensitivity inset:** the response curves of the human eye's S, M and L cone cells, for reference when choosing sample wavelengths.
 - **Sliders:** film thickness, the three IORs and the incident angle.
 
----
+<br>
+
 ---
 
 # Part 2: Shader Integration
 
-*Replacing the Fresnel term in Unity's URP Lit shader with the thin-film function.*
+> **Associated Module: 2 - Unity Integration**
 
-> 📦 Related: **Module 2: Unity Integration**
-
-<p align="center">
-  <img src="images/brdf-diagram.png" alt="Diagram of the thin-film Fresnel component inside the full BRDF" width="750"><br>
-  <sub>The thin-film calculation as the F term of the BRDF, alongside the distribution (D) and shadowing/masking (G) terms.</sub>
-</p>
+Now that we have successfully created a drop-in replacement for a BRDF's fresnel term, we must find a way to insert it into Unity's URP Lit shader.
 
 ## Extending the Lit shader without breaking it
 
-URP's `Lit.shader` pulls in a tree of `.hlsl` include files, and the Fresnel term sits several levels down. Editing Unity's package files directly would affect every Lit material and be overwritten on updates. Instead, each file that needs to change is copied into the project, and every file above it in the tree is copied too, so it can include the modified version. Each copy keeps the original's include guard (for example `#ifndef UNIVERSAL_BRDF_INCLUDED`), so if a stock URP file later tries to include the original, it's skipped and the modified copy is used.
+URP's `Lit.shader` pulls in a tree of `.hlsl` include files, and the Fresnel term sits several levels down. Editing Unity's package files directly would affect every Lit material and be overwritten on updates. 
+
+What this project does instead is create a copy of each shader file touched by this tree, allowing a completely separate thin film version of the lit shader to coexist with the default one. The changing of all files in the tree is necessary due to changes needed in the data being passed between code in different shader files (such as NoV seen later), and it also helpes to more cleanly separate the thin film lit shader from Unity's default.
 
 ```mermaid
 graph TD
@@ -217,8 +219,6 @@ graph TD
     class U1,U2 stock;
 ```
 <sub>Purple: new files · Green: copied and modified · Grey: Unity's files, unchanged</sub>
-
-Line numbers below refer to **URP 17.3.0** (Unity 6000.3).
 
 ## Direct specular
 
@@ -255,7 +255,7 @@ half3 EnvironmentBRDFSpecular(BRDFData brdfData, half fresnelTerm)
 }
 ```
 
-The variable `fresnelTerm` is only the blend weight. The actual Fresnel reflectance is the whole `lerp`, so the thin-film function replaces the entire `lerp`. To do that, the function needs two things the original signature doesn't provide: the actual viewing angle (`NoV`) and the surface UV (to read the film thickness map). So a new overload is added that takes both. The original is kept because URP's clear-coat code still calls it.
+Note that the `fresnelTerm` variable in Unity's original implementation is actually just a blend weight. The actual Fresnel reflectance is the whole `lerp`, so the thin-film function replaces the entire `lerp`. To do that, the function needs two things the original signature doesn't provide: the actual viewing angle (`NoV`) and the surface UV (to read the film thickness map). So a new overload is added that takes both. The original is kept because URP's clear-coat code still calls it.
 
 ```hlsl
 // Modified: MyBRDF.hlsl, lines 166–172
@@ -270,12 +270,13 @@ half3 EnvironmentBRDFSpecular(BRDFData brdfData, half fresnelTerm, half NoV, flo
 
 The caller, `GlobalIllumination()` in `MyGlobalIllumination.hlsl` (line 519, same line as the original), passes `NoV` and `uv` through `EnvironmentBRDF`.
 
+With the Fresnel term inserted at those two locations, the shader is complete and we have accomplished the final thin film effect shown at the beginning of this README.
+
 ## Changed files
 
 | File | Change |
 |---|---|
 | `ThinFilm.hlsl` | **New.** The thin-film math (`GetTFI`) and its material properties |
-| `BubbleDepth.hlsl` | **New.** Animated noise for the bubble effect |
 | `MyBRDF.hlsl` | Includes `ThinFilm.hlsl`; new `EnvironmentBRDFSpecular` overload using the film |
 | `MyLighting.hlsl` | Direct specular uses the film; passes `uv` to lighting and GI |
 | `MyGlobalIllumination.hlsl` | `GlobalIllumination` takes `uv` and passes `NoV` and `uv` on |
@@ -286,28 +287,26 @@ The caller, `GlobalIllumination()` in `MyGlobalIllumination.hlsl` (line 519, sam
 | `ThinFilmLit.shader` | Copy of `Lit.shader` with thin-film properties; forward pass uses the files above |
 | `ThinFilmLitShaderGUI.cs` | Custom material inspector: thin-film settings on top, Unity's Lit settings below |
 
-<p align="right"><a href="#contents">↑ Back to contents</a></p>
+<br>
 
 ---
----
 
-# Part 3: Beyond the Basics
-
-*An extended effect, the model's limitations, and where to learn more.*
+# Part 3: Extras & Closing Thoughts
 
 ## Extra effect: soap bubbles
 
-> 📦 Related: **Module 3: Extra Effects**
+> **Associated Module: 3 - Extras**
 
 <p align="center">
   <img src="images/bubble.gif" alt="Transparent soap bubble with shifting thin-film colors" width="500">
 </p>
 
+This effect highlights one of the key benefits of overriding Unity's lit shader: no extra code is needed for transparency because the shader already contains this functionality.
+
 The bubble effect is the same thin-film shader in transparent mode, with the film thickness driven by a slowly scrolling, warping noise texture instead of a constant value. A gradient makes the film thicker toward the bottom. This mimics a real soap bubble, where gravity slowly drains the film downward, so its thickness (and therefore its color) keeps shifting. Turn it on with the **Bubble Depth** toggle; the code is in `BubbleDepth.hlsl`.
 
 ## Assumptions and limitations
 
-> [!IMPORTANT]
 > **Only three wavelengths are sampled.** This is the limitation with the biggest visual impact. The color is an approximation, and the most noticeable artifact is colorful banding as film thickness increases.
 >
 > ![Desmos graph showing the reflectance curve oscillating faster as film thickness increases](images/desmos-thickness.gif)
@@ -320,11 +319,17 @@ The bubble effect is the same thin-film shader in transparent mode, with the fil
 - **Simplified physics.** No absorption in the film (to avoid dealing with complex refractive indices), a constant IOR for all wavelengths (no dispersion), a single film layer, and a smooth film that follows the surface exactly.
 - **Energy isn't strictly conserved.** The diffuse color doesn't dim when the film reflects more, and in transparent mode the transmitted light isn't tinted by the film.
 - **Metallic and specular colors no longer tint reflections**, since the film replaces the specular color.
-- **The Δ phase term can be inaccurate.** When the film's IOR is between the outside and object IORs (like an anti-reflective coating), Δ double-counts a phase flip that the Fresnel equations already include. Films with a higher IOR than both neighbors, like soap bubbles and oil on water, aren't affected.
 - **The outside IOR must be the smallest.** Otherwise total internal reflection can make the math return invalid values at steep angles.
 - **Brighter rims on rough surfaces.** The environment path drops URP's roughness-based grazing term, so rough materials reflect more at the edges than stock Lit.
 - **Forward and Forward+ only.** The Deferred path uses Unity's original GBuffer pass, so the effect won't appear there.
-- **Not SRP Batcher compatible**, because the thin-film properties are declared outside the `UnityPerMaterial` buffer.
+
+
+**Known Issues:**
+- **(WIP) Include guards are messed up.** This might break things.
+- **(WIP) Not SRP Batcher compatible**, because the thin-film properties are declared outside the `UnityPerMaterial` buffer.
+- **(WIP) The Δ phase term can be inaccurate.** When the film's IOR is between the outside and object IORs (like an anti-reflective coating), Δ double-counts a phase flip that the Fresnel equations already include. Films with a higher IOR than both neighbors, like soap bubbles and oil on water, aren't affected.
+- **(WIP) Copied shader names aren't properly reflected in the README tree.** 
+- **(WIP) Explanation of bubble effect may not match actual implementation. Double check.** 
 
 ## References
 
