@@ -7,17 +7,21 @@
 ## Contents
 
 1. [**Overview**](#part-1-overview): what thin-film interference is, the project, and the approach
+
 2. [**The Math**](#part-2-the-math): calculating thin-film reflectance at a single point
+
 3. [**Shader Integration**](#part-3-shader-integration): putting the math into Unity's URP Lit shader
+
 4. [**Beyond the Basics**](#part-4-beyond-the-basics): the bubble effect, limitations and references
 
-# Part 1: Overview
 
+<br>
 
+# Overview
 
 ## What is thin-film interference?
 
-Thin-film interference is the shifting rainbow color seen on soap bubbles, oil slicks and oxidized metals like bismuth. It happens when light reflects off both the top and bottom of a transparent layer only a few hundred nanometers thick. The reflected waves overlap, and depending on the film's thickness and the viewing angle, some wavelengths (colors) are amplified while others are suppressed.
+[*Thin-film interference*](https://en.wikipedia.org/wiki/Thin-film_interference) is the shifting rainbow color seen on soap bubbles, oil slicks, and oxidized metals like bismuth. It happens when light reflects off both the top and bottom of a transparent layer only a few hundred nanometers thick. The reflected waves overlap, and depending on the film's thickness and the viewing angle, some wavelengths (colors) are amplified while others are suppressed.
 
 <p align="center">
   <img src="images/soap-bubble.jpg" alt="Soap bubble surface" height="180">
@@ -27,48 +31,42 @@ Thin-film interference is the shifting rainbow color seen on soap bubbles, oil s
   <sub>Soap bubble (KarlGaff), diesel spill (John, CC BY-SA 2.5), bismuth crystal (Dschwen, CC BY 2.5). All via Wikimedia Commons.</sub>
 </p>
 
-## What is this project?
+## Project Overview
 
-This project implements the thin-film interference math from Bacterius's article [*Thin Film Interference for Computer Graphics*](https://gamedev.net/tutorials/programming/graphics/thin-film-interference-for-computer-graphics-r2962) inside Unity's URP Lit shader, along with supplemental educational materials. The main focus is keeping the effect simple and understandable at an undergraduate level while giving up as little realism as possible. A secondary focus is integrating cleanly with Unity's Lit shader, so the effect works alongside all of its normal features.
+This project implements the thin-film interference math from Bacterius' article [*Thin Film Interference for Computer Graphics*](https://gamedev.net/tutorials/programming/graphics/thin-film-interference-for-computer-graphics-r2962) inside Unity's URP Lit shader, along with supplemental educational materials. The main focus is keeping the effect simple and understandable at an undergraduate level while giving up as little realism as possible. A secondary focus is integrating cleanly with Unity's Lit shader, maintaining all of it's built-in features.
 
-## What is this README?
+## Unity Learning modules
 
-A brief write-up, with visual examples, that explains the effect from zero knowledge of thin-film optics. It assumes a basic working understanding of shaders, BRDFs and the applicable math (trigonometry and a little algebra).
+The repository includes three Unity modules containing scripts and scenes to study, test, and play with the code yourself. They are designed to be used in tandem with this README to fully understand what is going on.
 
-## Learning modules
+- **Module 1 - Thin-Film Math:** The thin-film function on its own, with test scenes for each variable.
+- **Module 2 - Unity Integration:** Integrating the function in to the URP Lit shader.
+- **Module 3 - Extras:** An animated soap-bubble effect and any other future extensions.
 
-The repository includes three Unity modules, each with scripts and scenes to learn, build and test the code yourself:
-
-- **Module 1: Thin-Film Math.** The thin-film function on its own, with test scenes for each variable.
-- **Module 2: Unity Integration.** Adding the function to the URP Lit shader, for both direct and environment lighting.
-- **Module 3: Extra Effects.** The animated soap-bubble effect and other extensions.
-
-Open the project in Unity 6000.3.19f1 with URP, open a module's scene, and adjust the **Thin Film Interference** settings on the test materials.
+To utilize the modules, import them into an existing Unity 6000.3.19f1 URP project. Explore the included scenes and follow along with the README tutorial to understand what is going on in each.
 
 ## Approach
 
-The implementation has two steps:
+The rest of this README is a crash course explanation of the project and the process used to arrive at the final result. It assumes a basic working knowledge of shaders, BRDF, and precalculus/linear algebra math concepts.
 
-1. **Approximate the thin-film math at a single point.** Write a function that answers: *given a wavelength, an incident angle, the three refractive indices and the film's thickness, how much light is reflected?*
-2. **Plug that function into a BRDF.** In a standard BRDF, the Fresnel term decides how much light is reflected at a given angle. Replacing it with the thin-film function renders the effect while leaving the rest of the lighting model unchanged.
+The organization of this explanation mimics that of the included modules:
 
-<p align="right"><a href="#contents">↑ Back to contents</a></p>
+1. **Approximate the thin-film math at a single point.** Write a mathematical function that approximates thin film interference at a single point on a surface given info about that surface (similar to how a fragment shader might).
+
+2. **Plug that function into a BRDF.** In a standard BRDF, the Fresnel term decides how much light is reflected at a given angle. Replacing it with a thin-film function renders the effect while leaving the rest of the lighting model unchanged.
 
 ---
----
 
-# Part 2: The Math
+# Part 1: Deriving the Function
 
-*Calculating how much light a thin film reflects at a single point.*
-
-> 📦 Related: **Module 1: Thin-Film Math**
+> **Associated Module: 1 - Thin-Film Math**
 
 <p align="center">
   <img src="images/math-diagram.png" alt="Flowchart of the full thin-film calculation" width="650"><br>
   <sub>The full calculation, from the light angles to the final reflected intensity.</sub>
 </p>
 
-The calculation follows Bacterius's derivation for a single film layer. It uses three media, each with a refractive index (IOR): the outside (n₀, usually air), the film (n₁, with thickness δ), and the object underneath (n₂).
+The calculation follows Bacterius's derivation for a single film layer. The general idea is to represent the amount of light fully transmitted into the internal medium. This is accomplished through a geometric series (infinite sum) representing the amount of light fully transmitted with each bounce in the thin film, for an infinite number of bounces. Due to the conservation of energy (and our assumption that no light is absorbed), we can subtract the total transmitted amount from 1 to get the total reflected amount. This may seem more roundabout than just calculating the reflected amount from the start, but it actually makes the math a bit simpler.
 
 <p align="center">
   <img src="https://uploads.gamedev.net/monthly_04_2013/medium.ccs-181063-0-33399500-1366822907.webp" alt="Light entering a single thin film, with labeled layers and angles" width="480"><br>
@@ -85,7 +83,7 @@ The full implementation is `GetTFI` in `ThinFilm.hlsl`.
 \theta_x = \arcsin\!\left(\frac{n_0 \sin\theta_0}{n_x}\right)
 ```
 
-θ₀ is the angle the light arrives at, measured from the surface's microfacet normal (the half vector **h**). Light bends as it enters a new material, so θₓ gives its angle inside the film (x = 1) and inside the object (x = 2). This is Snell's law, $`n_0 \sin\theta_0 = n_x \sin\theta_x`$, solved for θₓ. (For environment reflections, the surface normal **n** is used in place of **h**.)
+Every step of this calculation requires knowing what angle the light is travelling at, so we will start there. θ₀ is the angle the light arrives at (incident light angle), measured from the surface's normal. Light bends as it enters a new material, so θₓ gives its angle inside the film (θ₁) and inside the object (θ₂). This is Snell's law, $`n_0 \sin\theta_0 = n_x \sin\theta_x`$, solved for θₓ. (For environment reflections, the surface normal **n** is used in place of **h**.)
 
 ### 2. Reflection and transmission at each boundary (Fresnel equations)
 
@@ -111,10 +109,14 @@ r_p = \frac{n_j\cos\theta_i - n_i\cos\theta_j}{n_i\cos\theta_j + n_j\cos\theta_i
 t_p = \frac{2n_i\cos\theta_i}{n_i\cos\theta_j + n_j\cos\theta_i}
 ```
 
-Each time light meets a boundary between medium *i* and medium *j*, part of the wave reflects (ρ) and part transmits (τ). The Fresnel equations give these amounts for the two polarizations of light, s and p. Tracing a wave's zigzag path through the film gives the two values the final formula needs:
+Each time a light wave meets a boundary between medium *i* and medium *j*, it splits into two waves: one reflected (ρ) and the other transmitted into medium j (τ). We know from the conservation of energy that the power of the original light wave is split between the two (ignoring the small amount that is absorbed). The Fresnel equations tell us what ratio of the original wave's power is reflected vs. transmitted, which depends on a special property of *i* and *j*'s materials: the refractive index.
+
+The Fresnel equations are different for the two polarizations of light, s and p. Light polarization is out-of-scope here, so all you need to know is that we will need to calculate once each for s and p, then average our results because we are assuming equal amounts of each.
+
+We use the Fresnel equations to create useful variables alpha (**α**) and beta (**β**). They are a bit less intuitive, but are essential for summing up repeated light bounces in our final equation. They roughly represent the following:
 
 - **α** is what a wave picks up on each round trip inside the film: reflect off the bottom (1→2), then off the top (1→0).
-- **β** is what a wave picks up getting through the film at all: transmit in (0→1), then out (1→2).
+- **β** is what a wave picks up getting into and out of the film: transmit in (0→1), then out (1→2).
 
 ### 3. Phase shift
 
@@ -126,9 +128,16 @@ Each time light meets a boundary between medium *i* and medium *j*, part of the 
 \Delta_{i|j} = \begin{cases} 0 & \text{if } n_i > n_j \\ \pi & \text{if } n_i < n_j \end{cases}
 ```
 
-φ is how far out of step each successive wave is from the one before it. Each round trip adds the same extra distance, $`2\,n_1\,\delta\cos\theta_1`$ (twice the thickness, lengthened by the angle and by light moving slower in the film), and $`\frac{2\pi}{\lambda}`$ converts that distance into a phase. Δ adds a half-wave flip for each reflection off a denser medium. Because φ depends on the wavelength λ, this is the step that makes different colors behave differently.
+Now that we know the magnitude of each reflected wave, we must consider phase. Knowing the phase of a light wave after each bounce is essential because it will determine [*how it interferes with other waves*](https://gamedev.net/tutorials/programming/graphics/thin-film-interference-for-computer-graphics-r2962) of (approximately) the same color/wavelength. If light at a specific color tends to be in-phase with itself upon each reflection, that color will be stronger. The opposite is true for out-of-phase tending colors. This is the main driving factor behind thin film interference.
+
+ φ is how far out of step each successive wave is from the one before it. Each round trip adds the same extra distance, $`2\,n_1\,\delta\cos\theta_1`$ (twice the thickness, lengthened by the angle and by light moving slower in the film), and $`\frac{2\pi}{\lambda}`$ converts that distance into a phase. Δ adds a half-wave flip for each [*reflection off a denser medium*](https://en.wikipedia.org/wiki/Reflection_phase_change). Because φ depends on the wavelength λ, this is the step that makes different colors behave differently.
 
 ### 4. Putting it all together
+
+```math
+I_T = \frac{n_2\cos\theta_2}{n_0\cos\theta_0}\left|\,\beta\sum_{k=0}^{\infty}\left(\alpha e^{i\varphi}\right)^k\right|^2
+= \frac{n_2\cos\theta_2}{n_0\cos\theta_0}\left|\frac{\beta}{1-\alpha e^{i\varphi}}\right|^2
+```
 
 ```math
 I_T = \left(\frac{n_2\cos\theta_2}{n_0\cos\theta_0}\right)\frac{|\beta|^2}{|\alpha|^2 - 2\alpha\cos\varphi + 1}
@@ -160,12 +169,10 @@ The shader evaluates *I_R* at three wavelengths (one each for red, green and blu
 - **Cone sensitivity inset:** the response curves of the human eye's S, M and L cone cells, for reference when choosing sample wavelengths.
 - **Sliders:** film thickness, the three IORs and the incident angle.
 
-<p align="right"><a href="#contents">↑ Back to contents</a></p>
-
 ---
 ---
 
-# Part 3: Shader Integration
+# Part 2: Shader Integration
 
 *Replacing the Fresnel term in Unity's URP Lit shader with the thin-film function.*
 
@@ -284,7 +291,7 @@ The caller, `GlobalIllumination()` in `MyGlobalIllumination.hlsl` (line 519, sam
 ---
 ---
 
-# Part 4: Beyond the Basics
+# Part 3: Beyond the Basics
 
 *An extended effect, the model's limitations, and where to learn more.*
 
@@ -310,7 +317,7 @@ The bubble effect is the same thin-film shader in transparent mode, with the fil
 **Other assumptions and limitations:**
 
 - **Unpolarized light.** The s- and p-polarized results are averaged equally, a standard assumption in computer graphics.
-- **Simplified physics.** No absorption in the film, a constant IOR for all wavelengths (no dispersion), a single film layer, and a smooth film that follows the surface exactly.
+- **Simplified physics.** No absorption in the film (to avoid dealing with complex refractive indices), a constant IOR for all wavelengths (no dispersion), a single film layer, and a smooth film that follows the surface exactly.
 - **Energy isn't strictly conserved.** The diffuse color doesn't dim when the film reflects more, and in transparent mode the transmitted light isn't tinted by the film.
 - **Metallic and specular colors no longer tint reflections**, since the film replaces the specular color.
 - **The Δ phase term can be inaccurate.** When the film's IOR is between the outside and object IORs (like an anti-reflective coating), Δ double-counts a phase flip that the Fresnel equations already include. Films with a higher IOR than both neighbors, like soap bubbles and oil on water, aren't affected.
@@ -328,5 +335,3 @@ The bubble effect is the same thin-film shader in transparent mode, with the fil
 - Wikipedia: [Thin-film interference](https://en.wikipedia.org/wiki/Thin-film_interference), [Fresnel equations](https://en.wikipedia.org/wiki/Fresnel_equations), [Snell's law](https://en.wikipedia.org/wiki/Snell%27s_law)
 
 **Image credits:** soap bubble by [KarlGaff](https://commons.wikimedia.org/wiki/File:Lipid_Islands_on_Soap_Bubble.jpg), diesel spill by [John](https://commons.wikimedia.org/wiki/File:Dieselrainbow.jpg) (CC BY-SA 2.5), bismuth crystal by [Dschwen](https://commons.wikimedia.org/wiki/File:Bismuth_crystal_macro.jpg) (CC BY 2.5), all via Wikimedia Commons. Thin-film layer diagram by Bacterius, GameDev.net.
-
-<p align="right"><a href="#contents">↑ Back to contents</a></p>
