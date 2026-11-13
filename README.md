@@ -71,7 +71,7 @@ The organization of this explanation mimics that of the included modules:
 The calculation follows Bacterius's derivation for a single film layer. The general idea is to represent the amount of light fully transmitted into the internal medium. This is accomplished through a geometric series (infinite sum) representing the amount of light fully transmitted with each bounce in the thin film, for an infinite number of bounces. Due to the conservation of energy (and our assumption that no light is absorbed), we can subtract the total transmitted amount from 1 to get the total reflected amount. This may seem more roundabout than just calculating the reflected amount from the start, but it actually makes the math a bit simpler.
 
 <p align="center">
-  <img src="https://uploads.gamedev.net/monthly_04_2013/medium.ccs-181063-0-33399500-1366822907.webp" alt="Light entering a single thin film, with labeled layers and angles" width="480"><br>
+  <img src="images/layers.png" alt="Light entering a single thin film, with labeled layers and angles" width="480"><br>
   <sub>The three layers and the light's angle in each. Image: Bacterius, <a href="https://gamedev.net/tutorials/programming/graphics/thin-film-interference-for-computer-graphics-r2962">GameDev.net</a></sub>
 </p>
 
