@@ -111,6 +111,10 @@ r_p = \frac{n_j\cos\theta_i - n_i\cos\theta_j}{n_i\cos\theta_j + n_j\cos\theta_i
 t_p = \frac{2n_i\cos\theta_i}{n_i\cos\theta_j + n_j\cos\theta_i}
 ```
 
+<sub>If equations appear duplicated or jumbled, a browser extension (often dark mode or ad blockers) may be interfering with GitHub's math rendering; try disabling extensions or opening the page in a private window.</sub>
+
+
+
 Each time a light wave meets a boundary between medium *i* and medium *j*, it splits into two waves: one reflected (ρ) and the other transmitted into medium j (τ). We know from the conservation of energy that the power of the original light wave is split between the two (ignoring the small amount that is absorbed). The Fresnel equations tell us what ratio of the original wave's power is reflected vs. transmitted, which depends on a special property of *i* and *j*'s materials: the refractive index.
 
 The Fresnel equations are different for the two polarizations of light, s and p. Light polarization is out-of-scope here, so all you need to know is that we will need to calculate once each for s and p, then average our results because we are assuming equal amounts of each.
