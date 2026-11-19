@@ -1,4 +1,4 @@
-# Thin-Film Interference in Unity URP
+# (Work in progress) Thin-Film Interference in Unity URP
 
 <p align="center">
   <img src="images/hero.png" alt="Thin-film material on a sphere, rotating under a light" width="600">
